@@ -9,13 +9,22 @@ import cv2
 import numpy as np
 
 def remove_background(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(image, (5, 5), 0)
+    image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+    #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = cv2.GaussianBlur(image, (5, 5), 0)
     #image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    _, binary = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     inverted = cv2.bitwise_not(binary)
     return inverted
+
+def pre_process(image):
+    img = cv2.imread(image)
+    img = cv2.resize(img, None, fx=.3, fy=.3) #resize using percentage
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) #change color format from BGR to RGB
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #format image to gray scale
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 11) #to remove background
+    return img
 
 # create a function that uses opencv to remove the background of an image and noise
 
@@ -48,30 +57,18 @@ def resize_image_4_scales(image):
         images.append(image)
         image = cv2.resize(image, (256 + j, 256 + j))
         #random sample to increase resize
-        j+=120
+        j+=0
     return images
-# create a function that corrects the skew of an image
 
-def correct_skew(image):
-    coords = np.column_stack(np.where(image > 0))
-    angle = cv2.minAreaRect(coords)[-1]
-    print(angle)
-    if angle < -45:
-        angle = -(90 + angle)
-    else:
-        angle = -angle
-    print(angle)
-    (h, w) = image.shape[:2]
-    center = (w // 2, h // 2)
-    print(center)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-    print(M)
-    rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    return rotated
+# create a function that smooths an image
+
+def smooth_image(image):
+    image = cv2.medianBlur(image, 5)
+    return image
 
 if __name__ == "__main__":
-    image = read_image("/Users/spacious/Documents/cumulare/spacious/ghec/cumulare-image-preprocessor/images/htr/be_thou_my_vision_1.png")
-    image = remove_background(image)
+    #image = read_image("/Users/spacious/Documents/cumulare/spacious/ghec/cumulare-image-preprocessor/images/htr/be_thou_my_vision.png")
+    image = pre_process("/Users/spacious/Documents/cumulare/spacious/ghec/cumulare-image-preprocessor/images/htr/i_love_you.png")
     #image = correct_skew(image)
     #image = resize_image(image)
     #image = remove_noise(image)
